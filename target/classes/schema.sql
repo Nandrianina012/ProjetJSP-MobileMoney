@@ -1,0 +1,45 @@
+CREATE DATABASE IF NOT EXISTS mobile_money;
+USE mobile_money;
+
+CREATE TABLE IF NOT EXISTS CLIENT (
+    numtel VARCHAR(20) PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    sexe VARCHAR(20) NOT NULL,
+    age INT NOT NULL,
+    solde INT NOT NULL DEFAULT 0,
+    mail VARCHAR(120) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS FRAIS_ENVOI (
+    idEnv VARCHAR(20) PRIMARY KEY,
+    montant1 INT NOT NULL,
+    montant2 INT NOT NULL,
+    frais_env INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS FRAIS_RECEP (
+    idRec VARCHAR(20) PRIMARY KEY,
+    montant1 INT NOT NULL,
+    montant2 INT NOT NULL,
+    frais_rec INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ENVOI (
+    idEnv VARCHAR(20) PRIMARY KEY,
+    numEnvoyeur VARCHAR(20) NOT NULL,
+    numRecepteur VARCHAR(20) NOT NULL,
+    montant INT NOT NULL,
+    date_envoi DATETIME NOT NULL,
+    payer_frais_retrait BOOLEAN NOT NULL,
+    raison VARCHAR(255),
+    CONSTRAINT fk_envoyeur FOREIGN KEY (numEnvoyeur) REFERENCES CLIENT(numtel),
+    CONSTRAINT fk_recepteur FOREIGN KEY (numRecepteur) REFERENCES CLIENT(numtel)
+);
+
+CREATE TABLE IF NOT EXISTS RETRAIT (
+    idrecep VARCHAR(20) PRIMARY KEY,
+    numtel VARCHAR(20) NOT NULL,
+    montant INT NOT NULL,
+    daterecep DATETIME NOT NULL,
+    CONSTRAINT fk_retrait_client FOREIGN KEY (numtel) REFERENCES CLIENT(numtel)
+);
