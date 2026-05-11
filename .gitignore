@@ -1,0 +1,17 @@
+/target/
+*.class
+*.log
+
+# IntelliJ / Cursor / VSCode
+/.idea/
+/.vscode/
+*.iml
+
+# Eclipse
+/.classpath
+/.project
+/.settings/
+
+# OS files
+.DS_Store
+Thumbs.db

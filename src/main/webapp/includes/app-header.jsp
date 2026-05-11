@@ -4,7 +4,7 @@
     <div>
         <h1>${param.headerTitle}</h1>
         <c:if test="${not empty param.headerSubtitle}">
-            <p>${param.headerSubtitle}</p>
+            <p class="para-header">${param.headerSubtitle}</p>
         </c:if>
     </div>
     <div class="header-actions">

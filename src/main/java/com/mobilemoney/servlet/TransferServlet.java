@@ -8,6 +8,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 @WebServlet("/envois")
 public class TransferServlet extends HttpServlet {
@@ -17,37 +20,29 @@ public class TransferServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             req.setAttribute("envois", operationDao.listTransfers());
-            req.getRequestDispatcher("/envois/form.jsp").forward(req, resp);
         } catch (Exception e) {
-            throw new ServletException(e);
+            req.setAttribute("envois", Collections.emptyList());
+            req.setAttribute("error", "Connexion a la base indisponible. Verifiez MySQL (localhost:3306) et db.properties.");
         }
+        req.getRequestDispatcher("/envois/form.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             String action = req.getParameter("action");
-            if ("update".equals(action)) {
-                operationDao.updateTransfer(
-                        req.getParameter("idEnv"),
-                        req.getParameter("numEnvoyeur"),
-                        req.getParameter("numRecepteur"),
-                        Integer.parseInt(req.getParameter("montant")),
-                        "on".equals(req.getParameter("payerFraisRetrait")),
-                        req.getParameter("raison")
-                );
-            } else if ("delete".equals(action)) {
-                operationDao.deleteTransfer(req.getParameter("idEnv"));
+            if (action != null && !action.isBlank()) {
+                throw new IllegalArgumentException("La modification/suppression d'envoi est desactivee pour proteger la coherence des soldes.");
             } else {
                 operationDao.doTransfer(
-                        req.getParameter("numEnvoyeur"),
-                        req.getParameter("numRecepteur"),
+                        normalizeNumtel(req.getParameter("numEnvoyeur")),
+                        normalizeNumtel(req.getParameter("numRecepteur")),
                         Integer.parseInt(req.getParameter("montant")),
                         "on".equals(req.getParameter("payerFraisRetrait")),
                         req.getParameter("raison")
                 );
             }
-            resp.sendRedirect(req.getContextPath() + "/envois?ok=1");
+            redirectWithMessage(resp, req.getContextPath() + "/envois", "Envoi enregistre avec succes !");
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
             try {
@@ -56,5 +51,21 @@ public class TransferServlet extends HttpServlet {
             }
             req.getRequestDispatcher("/envois/form.jsp").forward(req, resp);
         }
+    }
+
+    private void redirectWithMessage(HttpServletResponse resp, String basePath, String message) throws IOException {
+        String encoded = URLEncoder.encode(message, StandardCharsets.UTF_8);
+        resp.sendRedirect(basePath + "?ok=1&msg=" + encoded);
+    }
+
+    private String normalizeNumtel(String numtel) {
+        if (numtel == null || numtel.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le numéro de téléphone est obligatoire.");
+        }
+        String digitsOnly = numtel.replaceAll("\\D", "");
+        if (digitsOnly.length() < 9 || digitsOnly.length() > 15) {
+            throw new IllegalArgumentException("Le numéro de téléphone est invalide.");
+        }
+        return digitsOnly;
     }
 }

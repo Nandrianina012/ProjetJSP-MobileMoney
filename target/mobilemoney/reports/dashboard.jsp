@@ -12,27 +12,51 @@
 <div class="app-wrap">
     <jsp:include page="/includes/app-header.jsp">
         <jsp:param name="headerTitle" value="Mobile Money"/>
-        <jsp:param name="headerSubtitle" value="Tableau de bord — recette opérateur et opérations du jour"/>
+        <jsp:param name="headerSubtitle" value="Consultez les opérations du jour et suivez la recette de l'opérateur."/>
     </jsp:include>
     <jsp:include page="/includes/app-nav.jsp">
         <jsp:param name="active" value="dashboard"/>
     </jsp:include>
 
-    <section class="card">
-        <h2 class="card-title">Recette totale (frais envoi + retrait)</h2>
-        <p class="stat-inline">${recette} <span class="unit">Ar</span></p>
+    <c:if test="${not empty error}">
+        <div class="alert alert-error">${error}</div>
+    </c:if>
+
+    <section class="section-block">
+        <h2 class="card-title">Vue rapide</h2>
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); align-items: stretch;">
+            <div class="card" style="margin-bottom:0; padding:1rem;">
+                <p class="muted" style="margin:0 0 0.35rem;">Recette totale de l'opérateur</p>
+                <p class="stat-inline" style="margin:0;">${recette} <span class="unit">Ar</span></p>
+                <p class="muted" style="margin:0.2rem 0 0;">Somme des frais d'envoi et de retrait</p>
+            </div>
+            <div class="card" style="margin-bottom:0; padding:1rem;">
+                <p class="muted" style="margin:0 0 0.35rem;">Opérations (${date})</p>
+                <p class="stat-inline" style="margin:0;">${opsCount}</p>
+            </div>
+            <div class="card" style="margin-bottom:0; padding:1rem;">
+                <p class="muted" style="margin:0 0 0.35rem;">Envois</p>
+                <p class="stat-inline" style="margin:0;">${envoisCount}</p>
+                <p class="muted" style="margin:0.2rem 0 0;">${envoisMontant} Ar</p>
+            </div>
+            <div class="card" style="margin-bottom:0; padding:1rem;">
+                <p class="muted" style="margin:0 0 0.35rem;">Retraits</p>
+                <p class="stat-inline" style="margin:0;">${retraitsCount}</p>
+                <p class="muted" style="margin:0.2rem 0 0;">${retraitsMontant} Ar</p>
+            </div>
+        </div>
     </section>
 
-    <section class="card">
-        <h2 class="card-title">Opérations à une date</h2>
+    <section class="section-block">
+        <h2 class="card-title">Activité par date</h2>
         <form class="search-bar" method="get" action="${pageContext.request.contextPath}/dashboard">
             <input type="date" name="date" value="${date}" title="Date">
             <button type="submit" class="btn btn-primary">Afficher</button>
         </form>
     </section>
 
-    <section class="card">
-        <h2 class="card-title">Résultat</h2>
+    <section class="section-block">
+        <h2 class="card-title">Liste des opérations</h2>
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
@@ -78,27 +102,7 @@
         </c:if>
     </section>
 
-    <section class="card">
-        <h2 class="card-title">Relevé PDF (un mois)</h2>
-        <form class="form-grid" method="get" action="${pageContext.request.contextPath}/reports/statement-pdf" style="max-width:36rem;">
-            <div class="field">
-                <label for="pdf-tel">Téléphone client</label>
-                <input id="pdf-tel" name="numtel" required placeholder="032…">
-            </div>
-            <div class="field">
-                <label for="pdf-year">Année</label>
-                <input id="pdf-year" type="number" name="year" required value="2026" min="2000" max="2100">
-            </div>
-            <div class="field">
-                <label for="pdf-month">Mois</label>
-                <input id="pdf-month" type="number" name="month" required min="1" max="12" placeholder="1–12">
-            </div>
-            <div class="field" style="align-self:end;">
-                <button type="submit" class="btn btn-primary">Télécharger PDF</button>
-            </div>
-        </form>
-    </section>
 </div>
-<script src="${pageContext.request.contextPath}/js/theme.js"></script>
+<script src="${pageContext.request.contextPath}/js/theme.js?v=2"></script>
 </body>
 </html>

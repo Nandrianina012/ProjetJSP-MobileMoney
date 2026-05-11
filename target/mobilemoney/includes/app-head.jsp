@@ -14,4 +14,5 @@
         document.documentElement.setAttribute('data-theme', t);
     })();
 </script>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css?v=8">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css?v=15">
+<script defer src="${pageContext.request.contextPath}/js/ux.js?v=2"></script>

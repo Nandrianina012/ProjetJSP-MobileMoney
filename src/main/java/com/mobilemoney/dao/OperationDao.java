@@ -27,6 +27,8 @@ public class OperationDao {
                 if (envoyeur == null || recepteur == null) {
                     throw new IllegalArgumentException("Numéro envoyeur/récepteur invalide.");
                 }
+                String envoyeurNumtelDb = (String) envoyeur.get("numtel");
+                String recepteurNumtelDb = (String) recepteur.get("numtel");
 
                 int fraisEnvoi = getTransferFee(cn, montant);
                 int fraisRetrait = getWithdrawalFee(cn, montant);
@@ -36,15 +38,15 @@ public class OperationDao {
                     throw new IllegalArgumentException("Solde insuffisant pour l'envoi.");
                 }
 
-                updateBalance(cn, numEnvoyeur, -debitEnv);
-                updateBalance(cn, numRecepteur, montant);
+                updateBalance(cn, envoyeurNumtelDb, -debitEnv);
+                updateBalance(cn, recepteurNumtelDb, montant);
 
                 String id = "E-" + UUID.randomUUID().toString().substring(0, 8);
                 String sql = "INSERT INTO ENVOI(idEnv, numEnvoyeur, numRecepteur, montant, date_envoi, payer_frais_retrait, raison) VALUES(?,?,?,?,?,?,?)";
                 try (PreparedStatement ps = cn.prepareStatement(sql)) {
                     ps.setString(1, id);
-                    ps.setString(2, numEnvoyeur);
-                    ps.setString(3, numRecepteur);
+                    ps.setString(2, envoyeurNumtelDb);
+                    ps.setString(3, recepteurNumtelDb);
                     ps.setInt(4, montant);
                     ps.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
                     ps.setBoolean(6, payerFraisRetrait);
@@ -55,10 +57,37 @@ public class OperationDao {
                 cn.commit();
 
                 String from = "noreply@mobilemoney.local";
-                MailUtil.sendMail("localhost", 25, from, (String) envoyeur.get("mail"), "Notification envoi",
-                        "Vous avez envoye " + montant + " Ar a " + numRecepteur + ". Frais envoi: " + fraisEnvoi + " Ar.");
-                MailUtil.sendMail("localhost", 25, from, (String) recepteur.get("mail"), "Notification reception",
-                        "Vous avez recu " + montant + " Ar de " + numEnvoyeur + ".");
+                String mailEnvoyeur = stringValue(envoyeur.get("mail"));
+                String mailRecepteur = stringValue(recepteur.get("mail"));
+                int fraisSupportesEnvoyeur = fraisEnvoi + (payerFraisRetrait ? fraisRetrait : 0);
+                int totalDebiteEnvoyeur = montant + fraisSupportesEnvoyeur;
+                String sujetEnvoyeur = "Notification envoi - " + montant + " Ar";
+                String corpsEnvoyeur = "Bonjour,\n\n"
+                        + "Votre envoi d'argent a ete enregistre.\n"
+                        + "Numero envoyeur : " + envoyeurNumtelDb + "\n"
+                        + "Numero destinataire : " + recepteurNumtelDb + "\n"
+                        + "Montant envoye : " + montant + " Ar\n"
+                        + "Frais d'envoi : " + fraisEnvoi + " Ar\n"
+                        + "Frais de retrait pris en charge : " + (payerFraisRetrait ? fraisRetrait + " Ar" : "Non") + "\n"
+                        + "Total debite : " + totalDebiteEnvoyeur + " Ar\n\n"
+                        + "Merci d'utiliser Mobile Money.";
+
+                String sujetRecepteur = "Notification reception - " + montant + " Ar";
+                String corpsRecepteur = "Bonjour,\n\n"
+                        + "Vous avez recu un envoi d'argent.\n"
+                        + "Numero expediteur : " + envoyeurNumtelDb + "\n"
+                        + "Numero destinataire : " + recepteurNumtelDb + "\n"
+                        + "Montant recu : " + montant + " Ar\n"
+                        + "Frais de retrait a votre charge : " + (payerFraisRetrait ? "0 Ar (pris en charge par l'expediteur)" : fraisRetrait + " Ar") + "\n"
+                        + "Montant net au retrait : " + (montant - (payerFraisRetrait ? 0 : fraisRetrait)) + " Ar\n\n"
+                        + "Merci d'utiliser Mobile Money.";
+
+                if (!mailEnvoyeur.isBlank()) {
+                    MailUtil.sendMail("localhost", 25, from, mailEnvoyeur, sujetEnvoyeur, corpsEnvoyeur);
+                }
+                if (!mailRecepteur.isBlank()) {
+                    MailUtil.sendMail("localhost", 25, from, mailRecepteur, sujetRecepteur, corpsRecepteur);
+                }
             } catch (Exception e) {
                 cn.rollback();
                 if (e instanceof SQLException) {
@@ -79,6 +108,7 @@ public class OperationDao {
                 if (client == null) {
                     throw new IllegalArgumentException("Client introuvable.");
                 }
+                String numtelDb = (String) client.get("numtel");
 
                 int fraisRetrait = getWithdrawalFee(cn, montant);
                 int debit = montant + fraisRetrait;
@@ -87,11 +117,11 @@ public class OperationDao {
                     throw new IllegalArgumentException("Solde insuffisant pour ce retrait.");
                 }
 
-                updateBalance(cn, numtel, -debit);
+                updateBalance(cn, numtelDb, -debit);
                 String sql = "INSERT INTO RETRAIT(idrecep, numtel, montant, daterecep) VALUES(?,?,?,?)";
                 try (PreparedStatement ps = cn.prepareStatement(sql)) {
                     ps.setString(1, "R-" + UUID.randomUUID().toString().substring(0, 8));
-                    ps.setString(2, numtel);
+                    ps.setString(2, numtelDb);
                     ps.setInt(3, montant);
                     ps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
                     ps.executeUpdate();
@@ -250,5 +280,9 @@ public class OperationDao {
             ps.setString(2, numtel);
             ps.executeUpdate();
         }
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
     }
 }
