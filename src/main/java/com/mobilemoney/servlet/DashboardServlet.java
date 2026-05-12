@@ -49,6 +49,13 @@ public class DashboardServlet extends HttpServlet {
             req.setAttribute("retraitsCount", retraitsCount);
             req.setAttribute("envoisMontant", envoisMontant);
             req.setAttribute("retraitsMontant", retraitsMontant);
+
+            Map<String, Integer> allTime = operationDao.operationsAggregateAllTime();
+            req.setAttribute("allTimeOpsCount", allTime.get("opsCount"));
+            req.setAttribute("allTimeEnvoisCount", allTime.get("envoisCount"));
+            req.setAttribute("allTimeEnvoisMontant", allTime.get("envoisMontant"));
+            req.setAttribute("allTimeRetraitsCount", allTime.get("retraitsCount"));
+            req.setAttribute("allTimeRetraitsMontant", allTime.get("retraitsMontant"));
         } catch (Exception e) {
             req.setAttribute("operations", Collections.emptyList());
             req.setAttribute("recette", 0);
@@ -57,6 +64,11 @@ public class DashboardServlet extends HttpServlet {
             req.setAttribute("retraitsCount", 0);
             req.setAttribute("envoisMontant", 0);
             req.setAttribute("retraitsMontant", 0);
+            req.setAttribute("allTimeOpsCount", 0);
+            req.setAttribute("allTimeEnvoisCount", 0);
+            req.setAttribute("allTimeEnvoisMontant", 0);
+            req.setAttribute("allTimeRetraitsCount", 0);
+            req.setAttribute("allTimeRetraitsMontant", 0);
             req.setAttribute("error", "Connexion a la base indisponible. Verifiez MySQL (localhost:3306) et la configuration db.properties.");
         }
         req.getRequestDispatcher("/reports/dashboard.jsp").forward(req, resp);

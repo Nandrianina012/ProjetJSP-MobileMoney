@@ -139,6 +139,37 @@ public class OperationDao {
         }
     }
 
+    /**
+     * Totaux cumulés sur toutes les opérations enregistrées (envois + retraits).
+     */
+    public Map<String, Integer> operationsAggregateAllTime() throws SQLException {
+        String sql = "SELECT " +
+                "(SELECT COUNT(*) FROM ENVOI) + (SELECT COUNT(*) FROM RETRAIT) AS ops_count, " +
+                "(SELECT COUNT(*) FROM ENVOI) AS envois_count, " +
+                "(SELECT COALESCE(SUM(montant), 0) FROM ENVOI) AS envois_montant, " +
+                "(SELECT COUNT(*) FROM RETRAIT) AS retraits_count, " +
+                "(SELECT COALESCE(SUM(montant), 0) FROM RETRAIT) AS retraits_montant";
+        try (Connection cn = DbUtil.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            Map<String, Integer> out = new HashMap<>();
+            if (rs.next()) {
+                out.put("opsCount", rs.getInt("ops_count"));
+                out.put("envoisCount", rs.getInt("envois_count"));
+                out.put("envoisMontant", rs.getInt("envois_montant"));
+                out.put("retraitsCount", rs.getInt("retraits_count"));
+                out.put("retraitsMontant", rs.getInt("retraits_montant"));
+            } else {
+                out.put("opsCount", 0);
+                out.put("envoisCount", 0);
+                out.put("envoisMontant", 0);
+                out.put("retraitsCount", 0);
+                out.put("retraitsMontant", 0);
+            }
+            return out;
+        }
+    }
+
     public List<Map<String, Object>> operationsByDate(LocalDate date) throws SQLException {
         String sql = "SELECT idEnv AS id, date_envoi AS d, 'ENVOI' AS type, numEnvoyeur AS principal, numRecepteur AS secondaire, montant FROM ENVOI WHERE DATE(date_envoi)=? " +
                 "UNION ALL " +

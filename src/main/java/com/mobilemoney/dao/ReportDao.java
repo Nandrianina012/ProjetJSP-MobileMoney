@@ -17,9 +17,14 @@ import java.util.Set;
 public class ReportDao {
 
     public int recetteTotaleOperateur() throws SQLException {
+        // Recette = frais d'envoi (chaque ENVOI) + frais de retrait (chaque RETRAIT)
+        // + frais de retrait encaissés via ENVOI lorsque l'expéditeur paie aussi les frais de retrait du destinataire
+        // (pas de ligne RETRAIT dans ce cas, donc absent du 2e sous-total sans ce complément).
         String sql = "SELECT " +
                 "(SELECT COALESCE(SUM(fe.frais_env),0) FROM ENVOI e LEFT JOIN FRAIS_ENVOI fe ON e.montant BETWEEN fe.montant1 AND fe.montant2) + " +
-                "(SELECT COALESCE(SUM(fr.frais_rec),0) FROM RETRAIT r LEFT JOIN FRAIS_RECEP fr ON r.montant BETWEEN fr.montant1 AND fr.montant2) AS recette";
+                "(SELECT COALESCE(SUM(fr.frais_rec),0) FROM RETRAIT r LEFT JOIN FRAIS_RECEP fr ON r.montant BETWEEN fr.montant1 AND fr.montant2) + " +
+                "(SELECT COALESCE(SUM(fr2.frais_rec),0) FROM ENVOI e2 LEFT JOIN FRAIS_RECEP fr2 ON e2.montant BETWEEN fr2.montant1 AND fr2.montant2 WHERE e2.payer_frais_retrait = 1) "
+                + "AS recette";
         try (Connection cn = DbUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
