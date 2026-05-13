@@ -67,10 +67,13 @@ public class OperationDao {
                 String mailRecepteur = stringValue(recepteur.get("mail"));
                 int fraisSupportesEnvoyeur = fraisEnvoi + (payerFraisRetrait ? fraisRetrait : 0);
                 int totalDebiteEnvoyeur = montant + fraisSupportesEnvoyeur;
+                String motif = stringValue(raison);
+                String ligneMotif = motif.isBlank() ? "" : "Motif : " + motif + "\n";
                 String sujetEnvoyeur = "Notification envoi - " + montant + " Ar";
-                String corpsEnvoyeur = "Bonjour,"+ envoyeur.get("nom") +"\n\n"
+                String corpsEnvoyeur = "Bonjour, "+ envoyeur.get("nom") +"\n\n"
                         + "Votre envoi d'argent à " + recepteur.get("nom") + " (" + recepteurNumtelDb + ") a ete enregistre.\n"
                         + "Montant envoye : " + montant + " Ar\n"
+                        + ligneMotif
                         + "Frais d'envoi : " + fraisEnvoi + " Ar\n"
                         + "Frais de retrait pris en charge : " + (payerFraisRetrait ? fraisRetrait + " Ar" : "Non") + "\n"
                         + "Total debite : " + totalDebiteEnvoyeur + " Ar\n\n"
@@ -80,6 +83,7 @@ public class OperationDao {
                 String corpsRecepteur = "Bonjour, "+ recepteur.get("nom") +"\n\n"
                         + "Vous avez recu de l'argent de la part de " + envoyeur.get("nom") + " (" + envoyeurNumtelDb + ").\n"
                         + "Montant recu : " + montant + " Ar\n"
+                        + ligneMotif
                         + "Frais de retrait a votre charge : " + (payerFraisRetrait ? "0 Ar (pris en charge par l'expediteur)" : fraisRetrait + " Ar") + "\n"
                         + "Montant net au retrait : " + (montant - (payerFraisRetrait ? 0 : fraisRetrait)) + " Ar\n\n"
                         + "Merci d'utiliser notre service.";
