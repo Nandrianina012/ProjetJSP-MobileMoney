@@ -35,6 +35,40 @@ public class ReportDao {
         }
     }
 
+    public int recetteJournaliereOperateur(LocalDate date) throws SQLException {
+        LocalDate end = date.plusDays(1);
+        String sql = "SELECT " +
+                "(SELECT COALESCE(SUM(fe.frais_env),0) " +
+                "   FROM ENVOI e " +
+                "   LEFT JOIN FRAIS_ENVOI fe ON e.montant BETWEEN fe.montant1 AND fe.montant2 " +
+                "   WHERE e.date_envoi>=? AND e.date_envoi<?) + " +
+                "(SELECT COALESCE(SUM(fr.frais_rec),0) " +
+                "   FROM RETRAIT r " +
+                "   LEFT JOIN FRAIS_RECEP fr ON r.montant BETWEEN fr.montant1 AND fr.montant2 " +
+                "   WHERE r.daterecep>=? AND r.daterecep<?) + " +
+                "(SELECT COALESCE(SUM(fr2.frais_rec),0) " +
+                "   FROM ENVOI e2 " +
+                "   LEFT JOIN FRAIS_RECEP fr2 ON e2.montant BETWEEN fr2.montant1 AND fr2.montant2 " +
+                "   WHERE e2.payer_frais_retrait = 1 AND e2.date_envoi>=? AND e2.date_envoi<?) " +
+                "AS recette";
+
+        try (Connection cn = DbUtil.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            ps.setDate(2, java.sql.Date.valueOf(end));
+            ps.setDate(3, java.sql.Date.valueOf(date));
+            ps.setDate(4, java.sql.Date.valueOf(end));
+            ps.setDate(5, java.sql.Date.valueOf(date));
+            ps.setDate(6, java.sql.Date.valueOf(end));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("recette");
+                }
+                return 0;
+            }
+        }
+    }
+
     public List<Map<String, Object>> monthlyStatement(String numtel, int year, int month) throws SQLException {
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.plusMonths(1);

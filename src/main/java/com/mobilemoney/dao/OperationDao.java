@@ -1,6 +1,7 @@
 package com.mobilemoney.dao;
 
 import com.mobilemoney.util.DbUtil;
+import com.mobilemoney.util.MailConfig;
 import com.mobilemoney.util.MailUtil;
 
 import java.sql.Connection;
@@ -14,8 +15,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class OperationDao {
+    private static final Logger LOG = Logger.getLogger(OperationDao.class.getName());
+
     private final ClientDao clientDao = new ClientDao();
 
     public void doTransfer(String numEnvoyeur, String numRecepteur, int montant, boolean payerFraisRetrait, String raison) throws SQLException {
@@ -56,37 +60,41 @@ public class OperationDao {
 
                 cn.commit();
 
-                String from = "noreply@mobilemoney.local";
+                String from = MailConfig.getFrom();
+                String smtpHost = MailConfig.getSmtpHost();
+                int smtpPort = MailConfig.getSmtpPort();
                 String mailEnvoyeur = stringValue(envoyeur.get("mail"));
                 String mailRecepteur = stringValue(recepteur.get("mail"));
                 int fraisSupportesEnvoyeur = fraisEnvoi + (payerFraisRetrait ? fraisRetrait : 0);
                 int totalDebiteEnvoyeur = montant + fraisSupportesEnvoyeur;
                 String sujetEnvoyeur = "Notification envoi - " + montant + " Ar";
-                String corpsEnvoyeur = "Bonjour,\n\n"
-                        + "Votre envoi d'argent a ete enregistre.\n"
-                        + "Numero envoyeur : " + envoyeurNumtelDb + "\n"
-                        + "Numero destinataire : " + recepteurNumtelDb + "\n"
+                String corpsEnvoyeur = "Bonjour,"+ envoyeur.get("nom") +"\n\n"
+                        + "Votre envoi d'argent à " + recepteur.get("nom") + " (" + recepteurNumtelDb + ") a ete enregistre.\n"
                         + "Montant envoye : " + montant + " Ar\n"
                         + "Frais d'envoi : " + fraisEnvoi + " Ar\n"
                         + "Frais de retrait pris en charge : " + (payerFraisRetrait ? fraisRetrait + " Ar" : "Non") + "\n"
                         + "Total debite : " + totalDebiteEnvoyeur + " Ar\n\n"
-                        + "Merci d'utiliser Mobile Money.";
+                        + "Merci d'utiliser notre service.";
 
                 String sujetRecepteur = "Notification reception - " + montant + " Ar";
-                String corpsRecepteur = "Bonjour,\n\n"
-                        + "Vous avez recu un envoi d'argent.\n"
-                        + "Numero expediteur : " + envoyeurNumtelDb + "\n"
-                        + "Numero destinataire : " + recepteurNumtelDb + "\n"
+                String corpsRecepteur = "Bonjour, "+ recepteur.get("nom") +"\n\n"
+                        + "Vous avez recu de l'argent de la part de " + envoyeur.get("nom") + " (" + envoyeurNumtelDb + ").\n"
                         + "Montant recu : " + montant + " Ar\n"
                         + "Frais de retrait a votre charge : " + (payerFraisRetrait ? "0 Ar (pris en charge par l'expediteur)" : fraisRetrait + " Ar") + "\n"
                         + "Montant net au retrait : " + (montant - (payerFraisRetrait ? 0 : fraisRetrait)) + " Ar\n\n"
-                        + "Merci d'utiliser Mobile Money.";
+                        + "Merci d'utiliser notre service.";
 
                 if (!mailEnvoyeur.isBlank()) {
-                    MailUtil.sendMail("localhost", 25, from, mailEnvoyeur, sujetEnvoyeur, corpsEnvoyeur);
+                    MailUtil.sendMail(smtpHost, smtpPort, from, mailEnvoyeur, sujetEnvoyeur, corpsEnvoyeur);
+                } else {
+                    LOG.info("Notification mail envoyeur ignoree : aucune adresse mail en base pour le client "
+                            + envoyeurNumtelDb + " (remplir le champ mail du client pour recevoir l'e-mail).");
                 }
                 if (!mailRecepteur.isBlank()) {
-                    MailUtil.sendMail("localhost", 25, from, mailRecepteur, sujetRecepteur, corpsRecepteur);
+                    MailUtil.sendMail(smtpHost, smtpPort, from, mailRecepteur, sujetRecepteur, corpsRecepteur);
+                } else {
+                    LOG.info("Notification mail recepteur ignoree : aucune adresse mail en base pour le client "
+                            + recepteurNumtelDb + " (remplir le champ mail du client pour recevoir l'e-mail).");
                 }
             } catch (Exception e) {
                 cn.rollback();
@@ -127,6 +135,21 @@ public class OperationDao {
                     ps.executeUpdate();
                 }
                 cn.commit();
+
+                String mailClient = stringValue(client.get("mail"));
+                if (!mailClient.isBlank()) {
+                    String from = MailConfig.getFrom();
+                    String sujet = "Notification retrait - " + montant + " Ar";
+                    String corps = "Bonjour, "+ client.get("nom") +"\n\n"
+                            + "Votre retrait d'argent a ete enregistre.\n"
+                            + "Montant retire : " + montant + " Ar\n"
+                            + "Frais de retrait : " + fraisRetrait + " Ar\n"
+                            + "Total debite sur votre compte : " + debit + " Ar\n\n"
+                            + "Merci d'utiliser notre service.";
+                    MailUtil.sendMail(MailConfig.getSmtpHost(), MailConfig.getSmtpPort(), from, mailClient, sujet, corps);
+                } else {
+                    LOG.info("Notification mail retrait ignoree : aucune adresse mail en base pour le client " + numtelDb + ".");
+                }
             } catch (Exception e) {
                 cn.rollback();
                 if (e instanceof SQLException) {

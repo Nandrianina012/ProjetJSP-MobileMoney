@@ -27,9 +27,9 @@
         <div class="dashboard-quick-scroll">
             <div class="dashboard-quick-row">
                 <div class="card dashboard-quick-card">
-                    <p class="muted dashboard-quick-label">Recette totale de l'opérateur</p>
-                    <p class="stat-inline dashboard-quick-value">${recette} <span class="unit">Ar</span></p>
-                    <p class="muted dashboard-quick-hint">Somme des frais d'envoi et de retrait</p>
+                    <p class="muted dashboard-quick-label">Recette journalière de l'opérateur</p>
+                    <p class="stat-inline dashboard-quick-value">${recetteJour} <span class="unit">Ar</span></p>
+                    <p class="muted dashboard-quick-hint">Somme des frais d'envoi et de retrait (jour sélectionné)</p>
                 </div>
                 <div class="card dashboard-quick-card">
                     <p class="muted dashboard-quick-label">Opérations (${date})</p>

@@ -44,6 +44,7 @@ public class DashboardServlet extends HttpServlet {
 
             req.setAttribute("operations", operations);
             req.setAttribute("recette", reportDao.recetteTotaleOperateur());
+            req.setAttribute("recetteJour", reportDao.recetteJournaliereOperateur(date));
             req.setAttribute("opsCount", operations.size());
             req.setAttribute("envoisCount", envoisCount);
             req.setAttribute("retraitsCount", retraitsCount);
@@ -59,6 +60,7 @@ public class DashboardServlet extends HttpServlet {
         } catch (Exception e) {
             req.setAttribute("operations", Collections.emptyList());
             req.setAttribute("recette", 0);
+            req.setAttribute("recetteJour", 0);
             req.setAttribute("opsCount", 0);
             req.setAttribute("envoisCount", 0);
             req.setAttribute("retraitsCount", 0);

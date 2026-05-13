@@ -2,6 +2,7 @@ com\mobilemoney\dao\ClientDao.class
 com\mobilemoney\servlet\ClientServlet.class
 com\mobilemoney\servlet\FeeServlet.class
 com\mobilemoney\servlet\WithdrawalServlet.class
+com\mobilemoney\util\MailUtil$1.class
 com\mobilemoney\dao\ReportDao.class
 com\mobilemoney\util\MailUtil.class
 com\mobilemoney\dao\OperationDao.class
@@ -9,4 +10,5 @@ com\mobilemoney\dao\FeeDao.class
 com\mobilemoney\util\DbUtil.class
 com\mobilemoney\servlet\StatementPdfServlet.class
 com\mobilemoney\servlet\TransferServlet.class
+com\mobilemoney\util\MailConfig.class
 com\mobilemoney\servlet\DashboardServlet.class
